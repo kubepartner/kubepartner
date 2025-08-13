@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2020 The KubeSphere Authors.
+# Copyright 2020 The kubepartner Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,22 +19,22 @@ set -o nounset
 set -o pipefail
 
 function wait_for_installation_finish() {
-    echo "waiting for ks-installer pod ready"
-    kubectl -n kubesphere-system wait --timeout=180s --for=condition=Ready "$(kubectl -n kubesphere-system get pod -l app=ks-install -oname)"
-    echo "waiting for KubeSphere ready"
+    echo "waiting for kp-installer pod ready"
+    kubectl -n kubepartner-system wait --timeout=180s --for=condition=Ready "$(kubectl -n kubepartner-system get pod -l app=kp-install -oname)"
+    echo "waiting for kubepartner ready"
     while IFS= read -r line; do
-        if [[ $line =~ "Welcome to KubeSphere" ]]
+        if [[ $line =~ "Welcome to kubepartner" ]]
             then
                 break
         fi
-    done < <(timeout 900 kubectl logs -n kubesphere-system deploy/ks-installer -f)
+    done < <(timeout 900 kubectl logs -n kubepartner-system deploy/kp-installer -f)
 }
 
-# Use kubespheredev and latest tag as default image
+# Use kubepartnerdev and latest tag as default image
 TAG="${TAG:-latest}"
-REPO="${REPO:-kubespheredev}"
+REPO="${REPO:-kubepartnerdev}"
 
-# Use KIND_LOAD_IMAGE=y .hack/deploy-kubesphere.sh to load
+# Use KIND_LOAD_IMAGE=y .hack/deploy-kubepartner.sh to load
 # the built docker image into kind before deploying.
 if [[ "${KIND_LOAD_IMAGE:-}" == "y" ]]; then
     kind load docker-image "$REPO/ks-apiserver:$TAG" --name="${KIND_CLUSTER_NAME:-kind}"
@@ -42,11 +42,11 @@ if [[ "${KIND_LOAD_IMAGE:-}" == "y" ]]; then
 fi
 
 #TODO: override ks-apiserver and ks-controller-manager images with specific tag
-kubectl apply -f https://raw.githubusercontent.com/kubesphere/ks-installer/master/deploy/kubesphere-installer.yaml
-kubectl apply -f https://raw.githubusercontent.com/kubesphere/ks-installer/master/deploy/cluster-configuration.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubepartner/kp-installer/master/deploy/kubepartner-installer.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubepartner/kp-installer/master/deploy/cluster-configuration.yaml
 
 
 wait_for_installation_finish
 
-# Expose KubeSphere API Server
-kubectl -n kubesphere-system patch svc ks-apiserver -p '{"spec":{"type":"NodePort","ports":[{"name":"ks-apiserver","port":80,"protocol":"TCP","targetPort":9090,"nodePort":30881}]}}'
+# Expose kubepartner API Server
+kubectl -n kubepartner-system patch svc ks-apiserver -p '{"spec":{"type":"NodePort","ports":[{"name":"ks-apiserver","port":80,"protocol":"TCP","targetPort":9090,"nodePort":30881}]}}'
